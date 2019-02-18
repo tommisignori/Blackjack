@@ -1,0 +1,256 @@
+
+import random
+
+suits = ('Cuori', 'Mattoni', 'Picche', 'Fiori')
+ranks = ('Due', 'Tre', 'Quattro', 'Cinque', 'Sei', 'Sette', 'Otto', 'Nove', 'Dieci', 'Jack', 'Donna', 'Re', 'Asso')
+values = {'Due':2, 'Tre':3, 'Quattro':4, 'Cinque':5, 'Sei':6, 'Sette':7, 'Otto':8, 'Nove':9, 'Dieci':10, 'Jack':10,
+         'Donna':10, 'Re':10, 'Asso':11}
+
+playing = True
+
+
+
+class Card:
+    
+    def __init__(self, suit, rank):
+        self.suit=suit
+        self.rank=rank
+        
+    def __str__(self):
+        return self.rank+" di "+self.suit
+        
+        
+        
+class Deck:
+    
+    def __init__(self):
+        self.deck = []  # start with an empty list
+        for suit in suits:
+            for rank in ranks:
+                self.deck.append(Card(suit,rank))
+    
+    def __str__(self):
+        deck_comp = ""
+        for card in self.deck:
+            deck_comp += "\n" + card.__str__()
+        return "The deck has: " +deck_comp
+
+    def shuffle(self):
+        random.shuffle(self.deck)
+        
+    def deal(self):
+        single_card = self.deck.pop()
+        return single_card
+        
+        
+class Hand:
+    def __init__(self):
+        self.cards = []  # start with an empty list as we did in the Deck class
+        self.value = 0   # start with zero value
+        self.aces = 0    # add an attribute to keep track of aces
+    
+    def add_card(self,card):
+        self.cards.append(card) # aggiungo alla lista vuota una single card presa da deck.deal
+        self.value += values[card.rank] #questa carta ha come attributi un seme e un valore, che aggiungo al self.value di partenza
+    
+        #check se è uscito un asso
+        if card.rank == "Asso":
+            self.aces += 1
+        
+    def adjust_for_ace(self):
+        
+        #se il valore è > 21 e ho un asso, cambia il valore dell'asso in 1 (invece di 11 per default)
+        
+        while self.value > 21 and self.aces > 0: 
+            self.value -= 10
+            self.aces -= 1
+            
+  
+# Definisco il mio mazzo test e lo mescolo
+test_deck = Deck()
+test_deck.shuffle()
+
+#Definisco il player (rappresentato da l'oggetto "hand")
+test_player = Hand()
+
+#Prendo una carta dal mazzo (pulled_card) e la distribuisco (deal) nella mano (hand) del player. Aggiungo poi il valore della carta al valore di partenza del player
+pulled_card = test_deck.deal()
+print(pulled_card)
+test_player.add_card(pulled_card)
+print(test_player.value)
+
+test_player.add_card(test_deck.deal()) #aggiungo altre carte alla mano del player
+test_player.value #verifico di nuovo il punteggio
+
+
+class Chips:
+    
+    def __init__(self):
+        self.total = 100  # This can be set to a default value or supplied by a user input
+        self.bet = 0
+        
+    def win_bet(self):
+        self.total += self.bet
+    
+    def lose_bet(self):
+        self.total -= self.bet
+        
+  
+ def take_bet(chips):
+    
+    while True:
+        
+        try:
+            chips.bet = int(input("Quante fiches vuoi puntare? "))
+        except:
+            print("Inserisci un numero di fiches coglione")
+        else:
+            if chips.bet > chips.total:
+                print("Non hai fiches a sufficienza. Ti restano {} fiches".format(chips.total))
+            else:
+                break
+
+
+
+def hit(deck,hand):
+    
+    single_card = deck.deal()
+    hand.add_card(single_card)
+    hand.adjust_for_ace()
+
+
+
+def hit_or_stand(deck,hand):
+    
+    global playing  # to control an upcoming while loop
+    
+    while True:
+        x = input("Carta o Stai? Inserisci 'C' o 'S'")
+        
+        if x[0].lower() == "c":
+            hit(deck,hand)
+            
+        elif x[0].lower() == "s":
+            print("Ok, ora è il turno del banco")
+            playing = False
+        
+        else:
+            print("Ma che hai scritto?! Inserisci 'C' o 'S'")
+            continue
+            
+        break
+        
+        
+
+def show_some(player,dealer):
+    print("\nMano del banco:")
+    print(" <carta coperta>")
+    print('',dealer.cards[1])  
+    print("\nLa tua mano:", *player.cards, sep='\n ')
+    
+def show_all(player,dealer):
+    print("\nMano del banco:", *dealer.cards, sep='\n ')
+    print("Mano del banco =",dealer.value)
+    print("\nLa tua mano:", *player.cards, sep='\n ')
+    print("La tua mano =",player.value)
+    
+
+
+def player_busts(player,dealer,chips):
+    print("Hai sballato!")
+    chips.lose_bet()
+
+def player_wins(player,dealer,chips):
+    print("Hai vinto!")
+    chips.win_bet()
+
+def dealer_busts(player,dealer,chips):
+    print("Il banco sballa!")
+    chips.win_bet()
+    
+def dealer_wins(player,dealer,chips):
+    print("Il banco vince!")
+    chips.lose_bet()
+    
+def push(player,dealer):
+    print("Push! Avete lo stesso punteggio, mantieni la tua scommessa")
+    
+    
+    
+while True:
+    
+    # Print an opening statement
+    print("\nBenvenuto al tavolo del Blackjack! \nLo scopo del gioco è di accumulare un punteggio totale superiore al banco, ma senza andare oltre 21.\nIl punteggio viene calcolato sommando i valori delle singole carte.\nLe carte da 2 a 10 hanno il loro valore nominale, le figure valgono 10 punti, e l'asso può valere 1 o 11 punti.\nA differenza del giocatore, il banco deve darsi le carte se il valore della mano è inferiore a 17, altrimenti resterà")
+    
+    # Create & shuffle the deck, deal two cards to each player
+    deck = Deck()
+    deck.shuffle()
+    
+    player_hand = Hand()
+    player_hand.add_card(deck.deal())
+    player_hand.add_card(deck.deal())
+    
+    dealer_hand = Hand()
+    dealer_hand.add_card(deck.deal())
+    dealer_hand.add_card(deck.deal())
+            
+    # Set up the Player's chips
+    player_chips = Chips()  # remember the default value is 100    
+    
+    # Prompt the Player for their bet
+    take_bet(player_chips)
+    
+    # Show cards (but keep one dealer card hidden)
+    show_some(player_hand,dealer_hand)
+
+    
+    while playing:  # recall this variable from our hit_or_stand function
+        
+        # Prompt for Player to Hit or Stand
+        hit_or_stand(deck,player_hand)
+        
+        # Show cards (but keep one dealer card hidden)
+        show_some(player_hand,dealer_hand)
+        
+        # If player's hand exceeds 21, run player_busts() and break out of loop
+        if player_hand.value > 21:
+            player_busts(player_hand,dealer_hand,player_chips)
+
+            break
+
+    # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
+    if player_hand.value <= 21:
+        
+        while dealer_hand.value < 17:
+            hit(deck,dealer_hand)            
+            
+    
+        # Show all cards
+        show_all(player_hand,dealer_hand)
+    
+        # Run different winning scenarios
+        if dealer_hand.value > 21:
+            dealer_busts(player_hand,dealer_hand,player_chips)
+            
+        elif dealer_hand.value > player_hand.value:
+            dealer_wins(player_hand,dealer_hand,player_chips)
+        
+        elif dealer_hand.value < player_hand.value:
+            player_wins(player_hand,dealer_hand,player_chips)
+            
+        else:
+            push(player_hand,dealer_hand)
+            
+    
+    # Inform Player of their chips total 
+    print("\nHai un totale di {} fiches".format(player_chips.total))
+    
+    # Ask to play again
+    new_game = input("Vuoi giocare un'altra mano? Si o No? ")
+    
+    if new_game[0].lower() == "s":
+        playing = True
+        continue
+    else:
+        print("Grazie per aver giocato!")
+        break
